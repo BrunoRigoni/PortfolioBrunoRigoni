@@ -1,5 +1,5 @@
-// Última atualização: 2024-12-19 16:00:00 (commit: fix: Corrigir carregamento do Firebase no GitHub Pages)
-console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T16:00:00').toLocaleString('pt-BR'), '| Commit: fix: Corrigir carregamento do Firebase no GitHub Pages');
+// Última atualização: 2024-12-19 16:30:00 (commit: fix: Corrigir erro 400 Bad Request do Firestore - blob URLs não podem ser salvas)
+console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T16:30:00').toLocaleString('pt-BR'), '| Commit: fix: Corrigir erro 400 Bad Request do Firestore - blob URLs não podem ser salvas');
 
 // Importar funções do Firebase
 import { 
@@ -258,10 +258,12 @@ async function handleAddProject(event) {
     
     try {
         let imageUrl = '';
+        let imageFileName = '';
         
         // Como o Firebase Storage requer plano pago, vamos usar uma solução alternativa
-        // Por enquanto, criamos uma URL local para preview
+        // Por enquanto, criamos uma URL local para preview e salvamos o nome do arquivo
         imageUrl = URL.createObjectURL(imageFile);
+        imageFileName = imageFile.name;
         
         if (window.firebaseDb) {
             console.log('Salvando projeto no Firestore...');
@@ -270,7 +272,8 @@ async function handleAddProject(event) {
                 title: title,
                 description: description,
                 url: url,
-                imageUrl: imageUrl, // Esta será uma URL local temporária
+                imageUrl: `placeholder_${imageFileName}`, // Placeholder para o banco de dados
+                imageFileName: imageFileName, // Nome do arquivo para referência
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -330,10 +333,17 @@ function createProjectCard(title, description, url, imageUrl, projectId = null) 
         card.dataset.projectId = projectId;
     }
     
+    // Determinar a URL da imagem a ser exibida
+    let displayImageUrl = imageUrl;
+    if (imageUrl && imageUrl.startsWith('placeholder_')) {
+        // Se for um placeholder, usar uma imagem padrão
+        displayImageUrl = './assets/img/placeholder-project.png';
+    }
+    
     card.innerHTML = `
         <a href="${url}" target="_blank" class="project-link">
             <div class="card-image">
-                <img src="${imageUrl}" alt="${title}" onerror="this.src='./assets/img/placeholder-project.png'">
+                <img src="${displayImageUrl}" alt="${title}" onerror="this.src='./assets/img/placeholder-project.png'">
             </div>
             <div class="card-content">
                 <h3>${title}</h3>
@@ -343,7 +353,7 @@ function createProjectCard(title, description, url, imageUrl, projectId = null) 
     `;
     
     // Armazenar a URL da imagem para limpeza posterior se necessário
-    if (imageUrl.startsWith('blob:')) {
+    if (imageUrl && imageUrl.startsWith('blob:')) {
         card.dataset.imageUrl = imageUrl;
     }
     
