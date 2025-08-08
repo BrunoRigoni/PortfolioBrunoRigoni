@@ -1,5 +1,5 @@
-// Última atualização: 2024-12-19 16:30:00 (commit: fix: Corrigir erro 400 Bad Request do Firestore - blob URLs não podem ser salvas)
-console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T16:30:00').toLocaleString('pt-BR'), '| Commit: fix: Corrigir erro 400 Bad Request do Firestore - blob URLs não podem ser salvas');
+// Última atualização: 2024-12-19 17:15:00 (commit: fix: Corrigir erro 404 da imagem placeholder - usar profile-user.png como fallback)
+console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T17:15:00').toLocaleString('pt-BR'), '| Commit: fix: Corrigir erro 404 da imagem placeholder - usar profile-user.png como fallback');
 
 // Importar funções do Firebase
 import { 
@@ -337,13 +337,13 @@ function createProjectCard(title, description, url, imageUrl, projectId = null) 
     let displayImageUrl = imageUrl;
     if (imageUrl && imageUrl.startsWith('placeholder_')) {
         // Se for um placeholder, usar uma imagem padrão
-        displayImageUrl = './assets/img/placeholder-project.png';
+        displayImageUrl = './assets/img/profile-user.png';
     }
     
     card.innerHTML = `
         <a href="${url}" target="_blank" class="project-link">
             <div class="card-image">
-                <img src="${displayImageUrl}" alt="${title}" onerror="this.src='./assets/img/placeholder-project.png'">
+                <img src="${displayImageUrl}" alt="${title}" onerror="this.src='./assets/img/profile-user.png'">
             </div>
             <div class="card-content">
                 <h3>${title}</h3>
