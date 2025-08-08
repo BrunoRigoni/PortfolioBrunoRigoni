@@ -363,6 +363,20 @@ section p {
     border-color: rgba(97, 218, 251, 0.3);
 }
 
+.project-link-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    cursor: pointer;
+}
+
+.project-link-overlay:hover {
+    background: rgba(97, 218, 251, 0.1);
+}
+
 .project-link {
     text-decoration: none;
     color: inherit;
@@ -389,6 +403,42 @@ section p {
 
 .card:hover .card-image img {
     transform: scale(1.05);
+}
+
+/* Ícone de edição */
+.edit-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(97, 218, 251, 0.9);
+    color: var(--bg-primary);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 20;
+    font-size: 14px;
+    border: 2px solid rgba(97, 218, 251, 0.3);
+}
+
+.edit-icon:hover {
+    background: rgba(97, 218, 251, 1);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(97, 218, 251, 0.4);
+}
+
+.card:hover .edit-icon {
+    opacity: 1;
+}
+
+/* Posicionamento relativo para o card-image */
+.card-image {
+    position: relative;
 }
 
 .card-content {

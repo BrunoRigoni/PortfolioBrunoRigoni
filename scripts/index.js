@@ -1,5 +1,5 @@
-// Última atualização: 2024-12-19 17:15:00 (commit: fix: Corrigir erro 404 da imagem placeholder - usar profile-user.png como fallback)
-console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T17:15:00').toLocaleString('pt-BR'), '| Commit: fix: Corrigir erro 404 da imagem placeholder - usar profile-user.png como fallback');
+// Última atualização: 2024-12-19 17:45:00 (commit: feat: Adicionar funcionalidade de edição de projetos com ícone de lápis)
+console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T17:45:00').toLocaleString('pt-BR'), '| Commit: feat: Adicionar funcionalidade de edição de projetos com ícone de lápis');
 
 // Importar funções do Firebase
 import { 
@@ -7,7 +7,8 @@ import {
     addDoc, 
     getDocs, 
     deleteDoc, 
-    doc 
+    doc,
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { 
     signInWithEmailAndPassword 
@@ -99,6 +100,58 @@ document.addEventListener('DOMContentLoaded', function() {
 function openAddProjectModal() {
     // Sempre solicitar login primeiro (removendo verificação do localStorage)
     openModal('loginModal');
+}
+
+function openEditProjectModal(projectId, title, description, url, imageUrl) {
+    // Verificar se está logado
+    if (!isLoggedIn()) {
+        openModal('loginModal');
+        return;
+    }
+    
+    // Preencher o modal com os dados atuais
+    document.getElementById('projectTitle').value = title;
+    document.getElementById('projectDescription').value = description;
+    document.getElementById('projectUrl').value = url;
+    
+    // Limpar arquivo de imagem (não é possível editar imagem existente por enquanto)
+    document.getElementById('projectImage').value = '';
+    
+    // Limpar preview
+    const previewContainer = document.getElementById('imagePreview');
+    if (previewContainer) {
+        previewContainer.innerHTML = '';
+    }
+    
+    // Adicionar ID do projeto ao modal para identificação
+    const modal = document.getElementById('addProjectModal');
+    modal.dataset.editProjectId = projectId;
+    
+    // Alterar título e botão do modal
+    const modalTitle = modal.querySelector('.modal-header h3');
+    modalTitle.textContent = 'Editar Projeto';
+    
+    const submitButton = modal.querySelector('button[type="submit"]');
+    submitButton.textContent = 'Atualizar Projeto';
+    
+    // Abrir modal
+    openModal('addProjectModal');
+}
+
+function resetModalToCreateMode() {
+    // Resetar formulário
+    document.getElementById('addProjectForm').reset();
+    
+    // Remover ID de edição
+    const modal = document.getElementById('addProjectModal');
+    delete modal.dataset.editProjectId;
+    
+    // Restaurar título e botão originais
+    const modalTitle = modal.querySelector('.modal-header h3');
+    modalTitle.textContent = 'Adicionar Novo Projeto';
+    
+    const submitButton = modal.querySelector('button[type="submit"]');
+    submitButton.textContent = 'Adicionar Projeto';
 }
 
 function openModal(modalId) {
@@ -237,9 +290,22 @@ async function handleAddProject(event) {
     const url = document.getElementById('projectUrl').value.trim();
     const imageFile = document.getElementById('projectImage').files[0];
     
-    if (!title || !description || !url || !imageFile) {
-        alert('Por favor, preencha todos os campos.');
-        return;
+    // Verificar se é edição ou criação
+    const modal = document.getElementById('addProjectModal');
+    const isEditing = modal.dataset.editProjectId;
+    
+    if (isEditing) {
+        // Modo edição - não requer imagem
+        if (!title || !description || !url) {
+            alert('Por favor, preencha todos os campos obrigatórios.');
+            return;
+        }
+    } else {
+        // Modo criação - requer imagem
+        if (!title || !description || !url || !imageFile) {
+            alert('Por favor, preencha todos os campos.');
+            return;
+        }
     }
     
     // Validar arquivo de imagem
@@ -266,21 +332,38 @@ async function handleAddProject(event) {
         imageFileName = imageFile.name;
         
         if (window.firebaseDb) {
-            console.log('Salvando projeto no Firestore...');
-            const projectsCollection = collection(window.firebaseDb, 'projects');
-            const projectData = {
-                title: title,
-                description: description,
-                url: url,
-                imageUrl: `placeholder_${imageFileName}`, // Placeholder para o banco de dados
-                imageFileName: imageFileName, // Nome do arquivo para referência
-                createdAt: new Date(),
-                updatedAt: new Date()
-            };
-            
-            console.log('Dados do projeto a serem salvos:', projectData);
-            const docRef = await addDoc(projectsCollection, projectData);
-            console.log('Projeto salvo com sucesso! ID:', docRef.id);
+            if (isEditing) {
+                // Modo edição - atualizar projeto existente
+                console.log('Atualizando projeto no Firestore...');
+                const projectRef = doc(window.firebaseDb, 'projects', isEditing);
+                const updateData = {
+                    title: title,
+                    description: description,
+                    url: url,
+                    updatedAt: new Date()
+                };
+                
+                console.log('Dados do projeto a serem atualizados:', updateData);
+                await updateDoc(projectRef, updateData);
+                console.log('Projeto atualizado com sucesso! ID:', isEditing);
+            } else {
+                // Modo criação - adicionar novo projeto
+                console.log('Salvando projeto no Firestore...');
+                const projectsCollection = collection(window.firebaseDb, 'projects');
+                const projectData = {
+                    title: title,
+                    description: description,
+                    url: url,
+                    imageUrl: `placeholder_${imageFileName}`, // Placeholder para o banco de dados
+                    imageFileName: imageFileName, // Nome do arquivo para referência
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                };
+                
+                console.log('Dados do projeto a serem salvos:', projectData);
+                const docRef = await addDoc(projectsCollection, projectData);
+                console.log('Projeto salvo com sucesso! ID:', docRef.id);
+            }
             
             // Recarregar projetos do Firebase
             await loadProjectsFromFirebase();
@@ -306,7 +389,9 @@ async function handleAddProject(event) {
         }
         
         closeModal('addProjectModal');
-        document.getElementById('addProjectForm').reset();
+        
+        // Resetar modal para modo de criação
+        resetModalToCreateMode();
         
         // Limpar preview da imagem
         const previewContainer = document.getElementById('imagePreview');
@@ -314,7 +399,8 @@ async function handleAddProject(event) {
             previewContainer.innerHTML = '';
         }
         
-        alert('Projeto adicionado com sucesso!');
+        const message = isEditing ? 'Projeto atualizado com sucesso!' : 'Projeto adicionado com sucesso!';
+        alert(message);
         
     } catch (error) {
         console.error('Erro ao adicionar projeto:', error);
@@ -341,20 +427,32 @@ function createProjectCard(title, description, url, imageUrl, projectId = null) 
     }
     
     card.innerHTML = `
-        <a href="${url}" target="_blank" class="project-link">
-            <div class="card-image">
-                <img src="${displayImageUrl}" alt="${title}" onerror="this.src='./assets/img/profile-user.png'">
+        <div class="card-image">
+            <img src="${displayImageUrl}" alt="${title}" onerror="this.src='./assets/img/profile-user.png'">
+            <div class="edit-icon" title="Editar projeto">
+                ✏️
             </div>
-            <div class="card-content">
-                <h3>${title}</h3>
-                <p>${description}</p>
-            </div>
-        </a>
+        </div>
+        <div class="card-content">
+            <h3>${title}</h3>
+            <p>${description}</p>
+        </div>
+        <a href="${url}" target="_blank" class="project-link-overlay"></a>
     `;
     
     // Armazenar a URL da imagem para limpeza posterior se necessário
     if (imageUrl && imageUrl.startsWith('blob:')) {
         card.dataset.imageUrl = imageUrl;
+    }
+    
+    // Adicionar event listener para edição
+    const editIcon = card.querySelector('.edit-icon');
+    if (editIcon) {
+        editIcon.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openEditProjectModal(projectId, title, description, url, imageUrl);
+        });
     }
     
     return card;
@@ -432,6 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
 window.handleLogin = handleLogin;
 window.handleAddProject = handleAddProject;
 window.openAddProjectModal = openAddProjectModal;
+window.openEditProjectModal = openEditProjectModal;
 window.closeModal = closeModal;
 window.toggleSection = toggleSection;
 window.logout = logout;
