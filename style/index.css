@@ -353,7 +353,7 @@ section p {
     transition: all 0.3s ease;
     position: relative;
     min-width: 0;
-    min-height: 400px;
+    min-height: 25rem; /* 400px */
     display: flex;
     flex-direction: column;
 }
@@ -410,12 +410,12 @@ section p {
 /* Ícone de edição */
 .edit-icon {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 0.625rem; /* 10px */
+    right: 0.625rem; /* 10px */
     background: rgba(97, 218, 251, 0.9);
     color: var(--bg-primary);
-    width: 32px;
-    height: 32px;
+    width: 2rem; /* 32px */
+    height: 2rem; /* 32px */
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -424,7 +424,7 @@ section p {
     opacity: 0;
     transition: all 0.3s ease;
     z-index: 20;
-    font-size: 14px;
+    font-size: 0.875rem; /* 14px */
     border: 2px solid rgba(97, 218, 251, 0.3);
 }
 
@@ -982,7 +982,7 @@ section::before {
     }
     .section-header .expand-icon {
         position: absolute;
-        right: 16px;
+        right: 1rem; /* 16px -> 1rem */
         top: 50%;
         transform: translateY(-50%);
     }
@@ -991,8 +991,8 @@ section::before {
     .project-card,
     .add-project-card {
         width: 100%;
-        max-width: 320px;
-        margin: 10px auto;
+        max-width: 20rem; /* 320px -> 20rem */
+        margin: 0.625rem auto; /* 10px -> 0.625rem */
         height: auto;
     }
     .project-image {
@@ -1024,20 +1024,20 @@ section::before {
     text-align: center;
 }
 
-.add-project-icon {
-    width: 80px;
-    height: 80px;
+    .add-project-icon {
+        width: 5rem; /* 80px */
+        height: 5rem; /* 80px */
     border-radius: 50%;
     background: linear-gradient(135deg, var(--primary-color), var(--function-color));
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 0 20px rgba(97, 218, 251, 0.4);
+        margin-bottom: 1.5rem;
+        box-shadow: 0 0 1.25rem rgba(97, 218, 251, 0.4); /* 20px */
 }
 
-.add-project-icon span {
-    font-size: 3rem;
+    .add-project-icon span {
+        font-size: 3rem;
     font-weight: 700;
     color: var(--bg-primary);
 }
@@ -1723,14 +1723,14 @@ section::before {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    padding: 25px;
-    margin: 15px;
+    border-radius: 0.75rem; /* 12px */
+    padding: 1.5625rem; /* 25px */
+    margin: 0.9375rem; /* 15px */
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    width: 320px;
-    height: 420px;
+    width: 20rem; /* 320px */
+    height: 26.25rem; /* 420px */
     display: flex;
     flex-direction: column;
     text-align: center;
@@ -1748,8 +1748,8 @@ section::before {
     height: auto;
     aspect-ratio: 1 / 1;
     overflow: hidden;
-    border-radius: 12px;
-    margin-bottom: 20px;
+    border-radius: 0.75rem; /* 12px */
+    margin-bottom: 1.25rem; /* 20px */
 }
 
 .project-image img {
@@ -1757,7 +1757,7 @@ section::before {
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
-    border-radius: 12px;
+    border-radius: 0.75rem; /* 12px */
 }
 
 .project-card:hover .project-image img {
@@ -1817,12 +1817,12 @@ section::before {
 
 .edit-icon {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 1.25rem; /* 20px */
+    right: 1.25rem; /* 20px */
     background: rgba(0, 0, 0, 0.8);
     color: #00ff88;
-    width: 40px;
-    height: 40px;
+    width: 2.5rem; /* 40px */
+    height: 2.5rem; /* 40px */
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1830,9 +1830,9 @@ section::before {
     cursor: pointer;
     opacity: 0;
     transition: all 0.3s ease;
-    font-size: 18px;
+    font-size: 1.125rem; /* 18px */
     backdrop-filter: blur(10px);
-    border: 2px solid rgba(0, 255, 136, 0.3);
+    border: 0.125rem solid rgba(0, 255, 136, 0.3); /* 2px */
 }
 
 .project-card:hover .edit-icon {
@@ -1884,8 +1884,8 @@ section h2::after {
 
 /* Aumentar discretamente o tamanho do card e imagem quadrada */
 .project-card {
-    width: 340px;
-    height: 460px;
+    width: 20rem; /* 320px -> 20rem (mantém tamanho desktop) */
+    height: 26.25rem; /* 420px -> 26.25rem */
 }
 .project-image {
     aspect-ratio: 1 / 1;
