@@ -1,0 +1,415 @@
+// Importar funções do Firebase
+import { 
+    collection, 
+    addDoc, 
+    getDocs, 
+    deleteDoc, 
+    doc 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { 
+    ref, 
+    uploadBytes, 
+    getDownloadURL 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import { 
+    signInWithEmailAndPassword 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+// Animação de entrada para elementos
+document.addEventListener('DOMContentLoaded', function() {
+    // Animar elementos ao carregar a página
+    const animatedElements = document.querySelectorAll('.glass, header h1, header img, header p');
+    
+    animatedElements.forEach((element, index) => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+            element.style.transition = 'all 0.8s ease';
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        }, index * 200);
+    });
+
+    // Efeito de hover apenas nos elementos de projetos
+    const projectElements = document.querySelectorAll('.projects-grid .glass, .project-item');
+    
+    projectElements.forEach(element => {
+        element.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-10px) scale(1.02)';
+        });
+        
+        element.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+
+    // Carregar projetos do Firebase
+    loadProjectsFromFirebase();
+});
+
+// Função para expandir/colapsar seções
+function toggleSection(headerElement) {
+    const section = headerElement.closest('.collapsible-section');
+    const content = section.querySelector('.section-content');
+    const isExpanded = headerElement.classList.contains('expanded');
+    
+    if (isExpanded) {
+        // Colapsar
+        headerElement.classList.remove('expanded');
+        content.classList.remove('expanded');
+    } else {
+        // Expandir
+        headerElement.classList.add('expanded');
+        content.classList.add('expanded');
+    }
+}
+
+// Efeito de digitação melhorado
+function typeWriter(element, text, speed = 100) {
+    let i = 0;
+    element.textContent = '';
+    
+    function type() {
+        if (i < text.length) {
+            element.textContent += text.charAt(i);
+            i++;
+            setTimeout(type, speed);
+        } else {
+            // Adicionar cursor piscante no final
+            element.style.borderRight = '3px solid var(--primary-color)';
+        }
+    }
+    
+    type();
+}
+
+// Inicializar efeito de digitação quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    const typingElement = document.querySelector('.typing-effect');
+    if (typingElement) {
+        const originalText = typingElement.textContent;
+        typingElement.textContent = '';
+        
+        setTimeout(() => {
+            typeWriter(typingElement, originalText, 150);
+        }, 1000);
+    }
+});
+
+// Funções para modais
+function openAddProjectModal() {
+    // Sempre solicitar login primeiro (removendo verificação do localStorage)
+    openModal('loginModal');
+}
+
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Fechar modal ao clicar fora dele
+window.onclick = function(event) {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    });
+}
+
+// Verificar se está logado
+function isLoggedIn() {
+    return localStorage.getItem('adminLoggedIn') === 'true';
+}
+
+// Função para limpar login (útil para testes)
+function clearLogin() {
+    localStorage.removeItem('adminLoggedIn');
+}
+
+// Função para fazer login com Firebase
+async function handleLogin(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('adminEmail').value;
+    const password = document.getElementById('adminPassword').value;
+    
+    try {
+        // Tentar login com Firebase primeiro
+        if (window.firebaseAuth) {
+            const userCredential = await signInWithEmailAndPassword(window.firebaseAuth, email, password);
+            if (userCredential.user) {
+                // Login bem-sucedido
+                localStorage.setItem('adminLoggedIn', 'true');
+                closeModal('loginModal');
+                openModal('addProjectModal');
+                
+                // Limpar formulário
+                document.getElementById('loginForm').reset();
+                return;
+            }
+        }
+    } catch (error) {
+        console.log('Firebase login failed, trying fallback:', error);
+    }
+    
+    // Fallback para credenciais hardcoded
+    const adminEmail = 'brigoni2011@gmail.com';
+    const adminPassword = 'henrique2803!';
+    
+    if (email === adminEmail && password === adminPassword) {
+        // Login bem-sucedido
+        localStorage.setItem('adminLoggedIn', 'true');
+        closeModal('loginModal');
+        openModal('addProjectModal');
+        
+        // Limpar formulário
+        document.getElementById('loginForm').reset();
+    } else {
+        alert('Credenciais inválidas!');
+    }
+}
+
+// Função para carregar projetos do Firebase
+async function loadProjectsFromFirebase() {
+    try {
+        if (!window.firebaseDb) {
+            console.log('Firebase não inicializado');
+            return;
+        }
+
+        const projectsCollection = collection(window.firebaseDb, 'projects');
+        const querySnapshot = await getDocs(projectsCollection);
+        
+        const projectsGrid = document.querySelector('.projects-grid');
+        const addProjectCard = document.querySelector('.add-project-card');
+        
+        if (!projectsGrid || !addProjectCard) return;
+        
+        // Limpar projetos existentes (exceto o card de adicionar)
+        const existingProjects = projectsGrid.querySelectorAll('.card:not(.add-project-card)');
+        existingProjects.forEach(project => project.remove());
+        
+        // Adicionar projetos do Firebase
+        querySnapshot.forEach((doc) => {
+            const projectData = doc.data();
+            const projectCard = createProjectCard(
+                projectData.title,
+                projectData.description,
+                projectData.url,
+                projectData.imageUrl,
+                doc.id
+            );
+            projectsGrid.insertBefore(projectCard, addProjectCard);
+        });
+    } catch (error) {
+        console.error('Erro ao carregar projetos:', error);
+    }
+}
+
+// Função para adicionar projeto ao Firebase
+async function handleAddProject(event) {
+    event.preventDefault();
+    
+    const title = document.getElementById('projectTitle').value;
+    const description = document.getElementById('projectDescription').value;
+    const url = document.getElementById('projectUrl').value;
+    const imageFile = document.getElementById('projectImage').files[0];
+    
+    // Validar arquivo de imagem
+    if (!imageFile) {
+        alert('Por favor, selecione uma imagem para o projeto.');
+        return;
+    }
+    
+    // Validar tipo de arquivo
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    if (!allowedTypes.includes(imageFile.type)) {
+        alert('Por favor, selecione apenas arquivos PNG, JPEG ou JPG.');
+        return;
+    }
+    
+    // Validar tamanho do arquivo (máximo 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (imageFile.size > maxSize) {
+        alert('O arquivo é muito grande. Por favor, selecione uma imagem menor que 5MB.');
+        return;
+    }
+    
+    try {
+        let imageUrl = '';
+        
+        // Upload da imagem para Firebase Storage
+        if (window.firebaseStorage) {
+            const storageRef = ref(window.firebaseStorage, `project-images/${Date.now()}_${imageFile.name}`);
+            const snapshot = await uploadBytes(storageRef, imageFile);
+            imageUrl = await getDownloadURL(snapshot.ref);
+        } else {
+            // Fallback para URL local
+            imageUrl = URL.createObjectURL(imageFile);
+        }
+        
+        // Salvar projeto no Firebase Firestore
+        if (window.firebaseDb) {
+            const projectsCollection = collection(window.firebaseDb, 'projects');
+            const projectData = {
+                title: title,
+                description: description,
+                url: url,
+                imageUrl: imageUrl,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+            
+            await addDoc(projectsCollection, projectData);
+            
+            // Recarregar projetos
+            await loadProjectsFromFirebase();
+        } else {
+            // Fallback para adição local
+            const newProjectCard = createProjectCard(title, description, url, imageUrl);
+            const projectsGrid = document.querySelector('.projects-grid');
+            const addProjectCard = document.querySelector('.add-project-card');
+            
+            if (projectsGrid && addProjectCard) {
+                projectsGrid.insertBefore(newProjectCard, addProjectCard);
+            }
+        }
+        
+        // Fechar modal e limpar formulário
+        closeModal('addProjectModal');
+        document.getElementById('addProjectForm').reset();
+        
+        // Limpar preview da imagem
+        const previewContainer = document.getElementById('imagePreview');
+        if (previewContainer) {
+            previewContainer.innerHTML = '';
+        }
+        
+        // Mostrar mensagem de sucesso
+        alert('Projeto adicionado com sucesso!');
+        
+    } catch (error) {
+        console.error('Erro ao adicionar projeto:', error);
+        alert('Erro ao adicionar projeto. Tente novamente.');
+    }
+}
+
+// Função para criar card de projeto
+function createProjectCard(title, description, url, imageUrl, projectId = null) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    
+    if (projectId) {
+        card.dataset.projectId = projectId;
+    }
+    
+    card.innerHTML = `
+        <a href="${url}" target="_blank" class="project-link">
+            <div class="card-image">
+                <img src="${imageUrl}" alt="${title}" onerror="this.src='./assets/img/placeholder-project.png'">
+            </div>
+            <div class="card-content">
+                <h3>${title}</h3>
+                <p>${description}</p>
+            </div>
+        </a>
+    `;
+    
+    // Armazenar a URL da imagem para limpeza posterior se necessário
+    if (imageUrl.startsWith('blob:')) {
+        card.dataset.imageUrl = imageUrl;
+    }
+    
+    return card;
+}
+
+// Função para limpar URLs de objetos criados
+function cleanupObjectURLs() {
+    const cards = document.querySelectorAll('.card[data-image-url]');
+    cards.forEach(card => {
+        const imageUrl = card.dataset.imageUrl;
+        if (imageUrl && imageUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(imageUrl);
+        }
+    });
+}
+
+// Logout (opcional - pode ser adicionado em um menu)
+function logout() {
+    localStorage.removeItem('adminLoggedIn');
+    alert('Logout realizado com sucesso!');
+}
+
+// Função para preview da imagem selecionada
+function handleImagePreview(event) {
+    const file = event.target.files[0];
+    const previewContainer = document.getElementById('imagePreview');
+    
+    if (!previewContainer) {
+        // Criar container de preview se não existir
+        const container = document.createElement('div');
+        container.id = 'imagePreview';
+        container.className = 'image-preview';
+        container.style.cssText = `
+            margin-top: 1rem;
+            text-align: center;
+            padding: 1rem;
+            border: 1px solid rgba(97, 218, 251, 0.3);
+            border-radius: 8px;
+            background: rgba(68, 71, 90, 0.2);
+        `;
+        
+        const imageInput = document.getElementById('projectImage');
+        imageInput.parentNode.insertBefore(container, imageInput.nextSibling);
+    }
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewContainer = document.getElementById('imagePreview');
+            previewContainer.innerHTML = `
+                <img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">
+                    ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                </p>
+            `;
+        };
+        reader.readAsDataURL(file);
+    } else {
+        const previewContainer = document.getElementById('imagePreview');
+        if (previewContainer) {
+            previewContainer.innerHTML = '';
+        }
+    }
+}
+
+// Adicionar listener para preview da imagem
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('projectImage');
+    if (imageInput) {
+        imageInput.addEventListener('change', handleImagePreview);
+    }
+});
+
+// Exportar funções para uso global
+window.handleLogin = handleLogin;
+window.handleAddProject = handleAddProject;
+window.openAddProjectModal = openAddProjectModal;
+window.closeModal = closeModal;
+window.toggleSection = toggleSection;
+window.logout = logout;
+window.clearLogin = clearLogin;
