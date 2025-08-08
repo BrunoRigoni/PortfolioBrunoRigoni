@@ -1,5 +1,5 @@
-// Última atualização: 2024-12-19 17:45:00 (commit: feat: Adicionar funcionalidade de edição de projetos com ícone de lápis)
-console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T17:45:00').toLocaleString('pt-BR'), '| Commit: feat: Adicionar funcionalidade de edição de projetos com ícone de lápis');
+// Última atualização: 2024-12-19 18:15:00 (commit: feat: Corrigir atualização de imagem e adicionar funcionalidade de exclusão de projetos)
+console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T18:15:00').toLocaleString('pt-BR'), '| Commit: feat: Corrigir atualização de imagem e adicionar funcionalidade de exclusão de projetos');
 
 // Importar funções do Firebase
 import { 
@@ -114,18 +114,35 @@ function openEditProjectModal(projectId, title, description, url, imageUrl) {
     document.getElementById('projectDescription').value = description;
     document.getElementById('projectUrl').value = url;
     
-    // Limpar arquivo de imagem (não é possível editar imagem existente por enquanto)
-    document.getElementById('projectImage').value = '';
+    // Mostrar imagem atual do projeto
+    const imageInput = document.getElementById('projectImage');
+    imageInput.required = false; // Não é obrigatório na edição
     
-    // Limpar preview
+    // Mostrar preview da imagem atual
     const previewContainer = document.getElementById('imagePreview');
     if (previewContainer) {
-        previewContainer.innerHTML = '';
+        if (imageUrl && !imageUrl.startsWith('placeholder_')) {
+            // Se tem uma imagem real, mostrar ela
+            previewContainer.innerHTML = `
+                <div class="current-image-preview">
+                    <img src="${imageUrl}" alt="Imagem atual do projeto" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
+                    <p><small>Imagem atual do projeto</small></p>
+                </div>
+            `;
+        } else {
+            // Se é placeholder, mostrar mensagem
+            previewContainer.innerHTML = `
+                <div class="current-image-preview">
+                    <p><small>Projeto sem imagem personalizada</small></p>
+                </div>
+            `;
+        }
     }
     
     // Adicionar ID do projeto ao modal para identificação
     const modal = document.getElementById('addProjectModal');
     modal.dataset.editProjectId = projectId;
+    modal.dataset.currentImageUrl = imageUrl; // Guardar URL da imagem atual
     
     // Alterar título e botão do modal
     const modalTitle = modal.querySelector('.modal-header h3');
@@ -133,6 +150,17 @@ function openEditProjectModal(projectId, title, description, url, imageUrl) {
     
     const submitButton = modal.querySelector('button[type="submit"]');
     submitButton.textContent = 'Atualizar Projeto';
+    
+    // Adicionar botão de exclusão
+    const formActions = modal.querySelector('.form-actions');
+    if (!formActions.querySelector('.btn-delete')) {
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'btn-delete';
+        deleteButton.textContent = 'Excluir Projeto';
+        deleteButton.onclick = () => deleteProject(projectId);
+        formActions.insertBefore(deleteButton, formActions.firstChild);
+    }
     
     // Abrir modal
     openModal('addProjectModal');
@@ -145,6 +173,7 @@ function resetModalToCreateMode() {
     // Remover ID de edição
     const modal = document.getElementById('addProjectModal');
     delete modal.dataset.editProjectId;
+    delete modal.dataset.currentImageUrl; // Remover URL da imagem atual
     
     // Restaurar título e botão originais
     const modalTitle = modal.querySelector('.modal-header h3');
@@ -152,6 +181,13 @@ function resetModalToCreateMode() {
     
     const submitButton = modal.querySelector('button[type="submit"]');
     submitButton.textContent = 'Adicionar Projeto';
+
+    // Remover botão de exclusão
+    const formActions = modal.querySelector('.form-actions');
+    const deleteButton = formActions.querySelector('.btn-delete');
+    if (deleteButton) {
+        deleteButton.remove();
+    }
 }
 
 function openModal(modalId) {
@@ -294,42 +330,46 @@ async function handleAddProject(event) {
     const modal = document.getElementById('addProjectModal');
     const isEditing = modal.dataset.editProjectId;
     
-    if (isEditing) {
-        // Modo edição - não requer imagem
-        if (!title || !description || !url) {
-            alert('Por favor, preencha todos os campos obrigatórios.');
-            return;
+            if (isEditing) {
+            // Modo edição - não requer imagem
+            if (!title || !description || !url) {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                return;
+            }
+        } else {
+            // Modo criação - requer imagem
+            if (!title || !description || !url || !imageFile) {
+                alert('Por favor, preencha todos os campos.');
+                return;
+            }
         }
-    } else {
-        // Modo criação - requer imagem
-        if (!title || !description || !url || !imageFile) {
-            alert('Por favor, preencha todos os campos.');
-            return;
-        }
-    }
-    
-    // Validar arquivo de imagem
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    
-    if (!validTypes.includes(imageFile.type)) {
-        alert('Por favor, selecione apenas arquivos PNG, JPEG ou JPG.');
-        return;
-    }
-    
-    if (imageFile.size > maxSize) {
-        alert('A imagem deve ter no máximo 5MB.');
-        return;
-    }
-    
-    try {
-        let imageUrl = '';
-        let imageFileName = '';
         
-        // Como o Firebase Storage requer plano pago, vamos usar uma solução alternativa
-        // Por enquanto, criamos uma URL local para preview e salvamos o nome do arquivo
-        imageUrl = URL.createObjectURL(imageFile);
-        imageFileName = imageFile.name;
+        // Validar arquivo de imagem apenas se uma nova imagem foi selecionada
+        if (imageFile) {
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            
+            if (!validTypes.includes(imageFile.type)) {
+                alert('Por favor, selecione apenas arquivos PNG, JPEG ou JPG.');
+                return;
+            }
+            
+            if (imageFile.size > maxSize) {
+                alert('A imagem deve ter no máximo 5MB.');
+                return;
+            }
+        }
+    
+            try {
+            let imageUrl = '';
+            let imageFileName = '';
+            
+            // Como o Firebase Storage requer plano pago, vamos usar uma solução alternativa
+            // Por enquanto, criamos uma URL local para preview e salvamos o nome do arquivo
+            if (imageFile) {
+                imageUrl = URL.createObjectURL(imageFile);
+                imageFileName = imageFile.name;
+            }
         
         if (window.firebaseDb) {
             if (isEditing) {
@@ -342,6 +382,12 @@ async function handleAddProject(event) {
                     url: url,
                     updatedAt: new Date()
                 };
+                
+                // Se a imagem foi alterada, adicionar a nova imagem
+                if (imageFile) {
+                    updateData.imageUrl = `placeholder_${imageFileName}`; // Placeholder para o banco de dados
+                    updateData.imageFileName = imageFileName; // Nome do arquivo para referência
+                }
                 
                 console.log('Dados do projeto a serem atualizados:', updateData);
                 await updateDoc(projectRef, updateData);
@@ -469,6 +515,37 @@ function cleanupObjectURLs() {
     });
 }
 
+// Função para excluir projeto
+async function deleteProject(projectId) {
+    if (!confirm('Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.')) {
+        return;
+    }
+    
+    try {
+        if (window.firebaseDb) {
+            console.log('Excluindo projeto do Firestore...');
+            const projectRef = doc(window.firebaseDb, 'projects', projectId);
+            await deleteDoc(projectRef);
+            console.log('Projeto excluído com sucesso! ID:', projectId);
+            
+            // Recarregar projetos do Firebase
+            await loadProjectsFromFirebase();
+            
+            // Fechar modal
+            closeModal('addProjectModal');
+            resetModalToCreateMode();
+            
+            alert('Projeto excluído com sucesso!');
+        } else {
+            console.error('Firebase não disponível');
+            alert('Erro: Firebase não disponível');
+        }
+    } catch (error) {
+        console.error('Erro ao excluir projeto:', error);
+        alert('Erro ao excluir projeto. Verifique o console para mais detalhes.');
+    }
+}
+
 // Logout (opcional - pode ser adicionado em um menu)
 function logout() {
     localStorage.removeItem('adminLoggedIn');
@@ -535,3 +612,4 @@ window.closeModal = closeModal;
 window.toggleSection = toggleSection;
 window.logout = logout;
 window.clearLogin = clearLogin;
+window.deleteProject = deleteProject;
