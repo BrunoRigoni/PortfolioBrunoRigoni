@@ -980,6 +980,14 @@ section::before {
         left: 50%;
         transform: translateX(-50%);
     }
+    /* Alinhar a code-tag ao início no mobile */
+    section h2 .code-tag {
+        position: absolute;
+        left: 1rem;
+        right: auto;
+        margin-left: 0;
+        margin-right: 0.5rem;
+    }
     .section-header {
         justify-content: center;
     }
@@ -1705,6 +1713,10 @@ section::before {
         overflow-wrap: anywhere;
         line-height: 1.1;
         text-align: center;
+    }
+    /* Ajuste fino para telas muito estreitas */
+    section h2 .code-tag {
+        left: 0.75rem;
     }
     
     .project-card {
