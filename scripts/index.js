@@ -186,18 +186,26 @@ async function handleLogin(event) {
 // Função para carregar projetos do Firebase
 async function loadProjectsFromFirebase() {
     try {
+        console.log('Tentando carregar projetos do Firebase...');
+        
         if (!window.firebaseDb) {
-            console.log('Firebase não inicializado');
+            console.error('Firebase não inicializado - window.firebaseDb não encontrado');
             return;
         }
 
+        console.log('Firebase DB encontrado, buscando projetos...');
         const projectsCollection = collection(window.firebaseDb, 'projects');
         const querySnapshot = await getDocs(projectsCollection);
+        
+        console.log(`Encontrados ${querySnapshot.size} projetos no Firebase`);
         
         const projectsGrid = document.querySelector('.projects-grid');
         const addProjectCard = document.querySelector('.add-project-card');
         
-        if (!projectsGrid || !addProjectCard) return;
+        if (!projectsGrid || !addProjectCard) {
+            console.error('Elementos do DOM não encontrados');
+            return;
+        }
         
         // Limpar projetos existentes (exceto o card de adicionar)
         const existingProjects = projectsGrid.querySelectorAll('.card:not(.add-project-card)');
@@ -206,6 +214,7 @@ async function loadProjectsFromFirebase() {
         // Adicionar projetos do Firebase
         querySnapshot.forEach((doc) => {
             const projectData = doc.data();
+            console.log('Projeto carregado:', projectData);
             const projectCard = createProjectCard(
                 projectData.title,
                 projectData.description,
@@ -217,6 +226,7 @@ async function loadProjectsFromFirebase() {
         });
     } catch (error) {
         console.error('Erro ao carregar projetos:', error);
+        console.error('Detalhes do erro:', error.message);
     }
 }
 
@@ -224,10 +234,14 @@ async function loadProjectsFromFirebase() {
 async function handleAddProject(event) {
     event.preventDefault();
     
+    console.log('Iniciando adição de projeto...');
+    
     const title = document.getElementById('projectTitle').value;
     const description = document.getElementById('projectDescription').value;
     const url = document.getElementById('projectUrl').value;
     const imageFile = document.getElementById('projectImage').files[0];
+    
+    console.log('Dados do projeto:', { title, description, url, imageFile: imageFile?.name });
     
     // Validar arquivo de imagem
     if (!imageFile) {
@@ -254,16 +268,20 @@ async function handleAddProject(event) {
         
         // Upload da imagem para Firebase Storage
         if (window.firebaseStorage) {
+            console.log('Iniciando upload da imagem para Firebase Storage...');
             const storageRef = ref(window.firebaseStorage, `project-images/${Date.now()}_${imageFile.name}`);
             const snapshot = await uploadBytes(storageRef, imageFile);
             imageUrl = await getDownloadURL(snapshot.ref);
+            console.log('Imagem enviada com sucesso:', imageUrl);
         } else {
+            console.log('Firebase Storage não disponível, usando URL local');
             // Fallback para URL local
             imageUrl = URL.createObjectURL(imageFile);
         }
         
         // Salvar projeto no Firebase Firestore
         if (window.firebaseDb) {
+            console.log('Salvando projeto no Firestore...');
             const projectsCollection = collection(window.firebaseDb, 'projects');
             const projectData = {
                 title: title,
@@ -274,11 +292,14 @@ async function handleAddProject(event) {
                 updatedAt: new Date()
             };
             
-            await addDoc(projectsCollection, projectData);
+            console.log('Dados do projeto a serem salvos:', projectData);
+            const docRef = await addDoc(projectsCollection, projectData);
+            console.log('Projeto salvo com sucesso! ID:', docRef.id);
             
             // Recarregar projetos
             await loadProjectsFromFirebase();
         } else {
+            console.log('Firebase DB não disponível, usando fallback local');
             // Fallback para adição local
             const newProjectCard = createProjectCard(title, description, url, imageUrl);
             const projectsGrid = document.querySelector('.projects-grid');
@@ -304,7 +325,9 @@ async function handleAddProject(event) {
         
     } catch (error) {
         console.error('Erro ao adicionar projeto:', error);
-        alert('Erro ao adicionar projeto. Tente novamente.');
+        console.error('Detalhes do erro:', error.message);
+        console.error('Stack trace:', error.stack);
+        alert('Erro ao adicionar projeto. Tente novamente. Verifique o console para mais detalhes.');
     }
 }
 
