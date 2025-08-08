@@ -599,6 +599,13 @@ html {
         gap: 1.5rem;
         width: 100%;
     }
+
+    /* Skills: rolagem interna para caber todo o conteúdo */
+    .skills .section-content.expanded {
+        max-height: 70vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
 }
 
 /* Melhorar a acessibilidade */
@@ -1015,6 +1022,13 @@ section::before {
     }
     .project-image {
         height: auto;
+    }
+
+    /* Skills: rolagem interna (mobile pequeno) */
+    .skills .section-content.expanded {
+        max-height: 65vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 }
 
