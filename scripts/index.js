@@ -7,11 +7,6 @@ import {
     doc 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { 
-    ref, 
-    uploadBytes, 
-    getDownloadURL 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-import { 
     signInWithEmailAndPassword 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -230,56 +225,41 @@ async function loadProjectsFromFirebase() {
     }
 }
 
-// Função para adicionar projeto ao Firebase
+// Função para adicionar novo projeto
 async function handleAddProject(event) {
     event.preventDefault();
     
-    console.log('Iniciando adição de projeto...');
-    
-    const title = document.getElementById('projectTitle').value;
-    const description = document.getElementById('projectDescription').value;
-    const url = document.getElementById('projectUrl').value;
+    const title = document.getElementById('projectTitle').value.trim();
+    const description = document.getElementById('projectDescription').value.trim();
+    const url = document.getElementById('projectUrl').value.trim();
     const imageFile = document.getElementById('projectImage').files[0];
     
-    console.log('Dados do projeto:', { title, description, url, imageFile: imageFile?.name });
-    
-    // Validar arquivo de imagem
-    if (!imageFile) {
-        alert('Por favor, selecione uma imagem para o projeto.');
+    if (!title || !description || !url || !imageFile) {
+        alert('Por favor, preencha todos os campos.');
         return;
     }
     
-    // Validar tipo de arquivo
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-    if (!allowedTypes.includes(imageFile.type)) {
+    // Validar arquivo de imagem
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    
+    if (!validTypes.includes(imageFile.type)) {
         alert('Por favor, selecione apenas arquivos PNG, JPEG ou JPG.');
         return;
     }
     
-    // Validar tamanho do arquivo (máximo 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
     if (imageFile.size > maxSize) {
-        alert('O arquivo é muito grande. Por favor, selecione uma imagem menor que 5MB.');
+        alert('A imagem deve ter no máximo 5MB.');
         return;
     }
     
     try {
         let imageUrl = '';
         
-        // Upload da imagem para Firebase Storage
-        if (window.firebaseStorage) {
-            console.log('Iniciando upload da imagem para Firebase Storage...');
-            const storageRef = ref(window.firebaseStorage, `project-images/${Date.now()}_${imageFile.name}`);
-            const snapshot = await uploadBytes(storageRef, imageFile);
-            imageUrl = await getDownloadURL(snapshot.ref);
-            console.log('Imagem enviada com sucesso:', imageUrl);
-        } else {
-            console.log('Firebase Storage não disponível, usando URL local');
-            // Fallback para URL local
-            imageUrl = URL.createObjectURL(imageFile);
-        }
+        // Como o Firebase Storage requer plano pago, vamos usar uma solução alternativa
+        // Por enquanto, criamos uma URL local para preview
+        imageUrl = URL.createObjectURL(imageFile);
         
-        // Salvar projeto no Firebase Firestore
         if (window.firebaseDb) {
             console.log('Salvando projeto no Firestore...');
             const projectsCollection = collection(window.firebaseDb, 'projects');
@@ -287,7 +267,7 @@ async function handleAddProject(event) {
                 title: title,
                 description: description,
                 url: url,
-                imageUrl: imageUrl,
+                imageUrl: imageUrl, // Esta será uma URL local temporária
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -296,21 +276,29 @@ async function handleAddProject(event) {
             const docRef = await addDoc(projectsCollection, projectData);
             console.log('Projeto salvo com sucesso! ID:', docRef.id);
             
-            // Recarregar projetos
+            // Recarregar projetos do Firebase
             await loadProjectsFromFirebase();
         } else {
-            console.log('Firebase DB não disponível, usando fallback local');
-            // Fallback para adição local
-            const newProjectCard = createProjectCard(title, description, url, imageUrl);
-            const projectsGrid = document.querySelector('.projects-grid');
-            const addProjectCard = document.querySelector('.add-project-card');
+            console.log('Firebase não disponível, salvando localmente...');
+            // Fallback para armazenamento local
+            const project = {
+                id: Date.now(),
+                title: title,
+                description: description,
+                url: url,
+                imageUrl: imageUrl
+            };
             
-            if (projectsGrid && addProjectCard) {
-                projectsGrid.insertBefore(newProjectCard, addProjectCard);
+            // Adicionar ao array local
+            if (!window.localProjects) {
+                window.localProjects = [];
             }
+            window.localProjects.push(project);
+            
+            // Adicionar card do projeto
+            addProjectCard(project);
         }
         
-        // Fechar modal e limpar formulário
         closeModal('addProjectModal');
         document.getElementById('addProjectForm').reset();
         
@@ -320,7 +308,6 @@ async function handleAddProject(event) {
             previewContainer.innerHTML = '';
         }
         
-        // Mostrar mensagem de sucesso
         alert('Projeto adicionado com sucesso!');
         
     } catch (error) {
