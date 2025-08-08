@@ -388,7 +388,8 @@ section p {
 
 .card-image {
     width: 100%;
-    height: 200px;
+    height: auto;
+    aspect-ratio: 1 / 1;
     overflow: hidden;
     position: relative;
 }
@@ -452,7 +453,7 @@ section p {
 .card-content h3 {
     font-size: 1.5rem;
     font-weight: 600;
-    margin-bottom: 1rem;
+    margin: 0.25rem 0 0.5rem 0;
     background: var(--gradient-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -670,7 +671,7 @@ section::before {
 
 /* Efeito de digitação para o título */
 .typing-effect {
-    font-size: 4rem;
+    font-size: 3.2rem;
     font-weight: 700;
     margin-bottom: 2rem;
     background: var(--gradient-primary);
@@ -1542,8 +1543,11 @@ section::before {
     }
     
     .header h1 {
-        font-size: 2rem;
-        line-height: 1.2;
+        font-size: 1.8rem;
+        line-height: 1.1;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
     
     .header p {
