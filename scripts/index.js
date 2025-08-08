@@ -1,5 +1,5 @@
-// Última atualização: 2024-12-19 18:15:00 (commit: feat: Corrigir atualização de imagem e adicionar funcionalidade de exclusão de projetos)
-console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T18:15:00').toLocaleString('pt-BR'), '| Commit: feat: Corrigir atualização de imagem e adicionar funcionalidade de exclusão de projetos');
+// Última atualização: 2024-12-19 18:30:00 (commit: fix: Corrigir salvamento de imagem durante edição de projetos)
+console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T18:30:00').toLocaleString('pt-BR'), '| Commit: fix: Corrigir salvamento de imagem durante edição de projetos');
 
 // Importar funções do Firebase
 import { 
@@ -387,6 +387,12 @@ async function handleAddProject(event) {
                 if (imageFile) {
                     updateData.imageUrl = `placeholder_${imageFileName}`; // Placeholder para o banco de dados
                     updateData.imageFileName = imageFileName; // Nome do arquivo para referência
+                } else {
+                    // Se não foi alterada, manter a imagem atual
+                    const currentImageUrl = modal.dataset.currentImageUrl;
+                    if (currentImageUrl && !currentImageUrl.startsWith('placeholder_')) {
+                        updateData.imageUrl = currentImageUrl;
+                    }
                 }
                 
                 console.log('Dados do projeto a serem atualizados:', updateData);
@@ -400,7 +406,7 @@ async function handleAddProject(event) {
                     title: title,
                     description: description,
                     url: url,
-                    imageUrl: `placeholder_${imageFileName}`, // Placeholder para o banco de dados
+                    imageUrl: imageUrl, // Usar a URL real da imagem (blob: para preview local)
                     imageFileName: imageFileName, // Nome do arquivo para referência
                     createdAt: new Date(),
                     updatedAt: new Date()
