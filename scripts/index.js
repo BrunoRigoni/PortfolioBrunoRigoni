@@ -1,5 +1,5 @@
-// Última atualização: 2024-12-19 18:30:00 (commit: fix: Corrigir salvamento de imagem durante edição de projetos)
-console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T18:30:00').toLocaleString('pt-BR'), '| Commit: fix: Corrigir salvamento de imagem durante edição de projetos');
+// Última atualização: 2024-12-19 18:35:00 (commit: refactor: Alterar input de imagem para URLs ao invés de arquivos)
+console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T18:35:00').toLocaleString('pt-BR'), '| Commit: refactor: Alterar input de imagem para URLs ao invés de arquivos');
 
 // Importar funções do Firebase
 import { 
@@ -98,72 +98,56 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Funções para modais
 function openAddProjectModal() {
-    // Sempre solicitar login primeiro (removendo verificação do localStorage)
     openModal('loginModal');
 }
 
-function openEditProjectModal(projectId, title, description, url, imageUrl) {
-    // Verificar se está logado
-    if (!isLoggedIn()) {
-        openModal('loginModal');
-        return;
-    }
+function openEditProjectModal(project) {
+    const modal = document.getElementById('projectModal');
+    const modalTitle = modal.querySelector('.modal-title');
+    const form = modal.querySelector('form');
+    const imageInput = modal.querySelector('#projectImage');
+    const imagePreview = modal.querySelector('.image-preview');
+    const currentImagePreview = modal.querySelector('.current-image-preview');
     
-    // Preencher o modal com os dados atuais
-    document.getElementById('projectTitle').value = title;
-    document.getElementById('projectDescription').value = description;
-    document.getElementById('projectUrl').value = url;
+    // Configurar modal para edição
+    modalTitle.textContent = 'Editar Projeto';
+    form.dataset.editMode = 'true';
+    form.dataset.projectId = project.id;
+    form.dataset.currentImageUrl = project.imageUrl;
     
-    // Mostrar imagem atual do projeto
-    const imageInput = document.getElementById('projectImage');
-    imageInput.required = false; // Não é obrigatório na edição
+    // Preencher campos com dados existentes
+    form.querySelector('#projectTitle').value = project.title;
+    form.querySelector('#projectDescription').value = project.description;
+    form.querySelector('#projectUrl').value = project.url;
+    imageInput.value = project.imageUrl;
     
     // Mostrar preview da imagem atual
-    const previewContainer = document.getElementById('imagePreview');
-    if (previewContainer) {
-        if (imageUrl && !imageUrl.startsWith('placeholder_')) {
-            // Se tem uma imagem real, mostrar ela
-            previewContainer.innerHTML = `
-                <div class="current-image-preview">
-                    <img src="${imageUrl}" alt="Imagem atual do projeto" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
-                    <p><small>Imagem atual do projeto</small></p>
-                </div>
-            `;
-        } else {
-            // Se é placeholder, mostrar mensagem
-            previewContainer.innerHTML = `
-                <div class="current-image-preview">
-                    <p><small>Projeto sem imagem personalizada</small></p>
-                </div>
-            `;
-        }
+    if (currentImagePreview) {
+        currentImagePreview.style.display = 'block';
+        currentImagePreview.querySelector('img').src = project.imageUrl;
+        currentImagePreview.querySelector('p').textContent = 'Imagem atual:';
     }
     
-    // Adicionar ID do projeto ao modal para identificação
-    const modal = document.getElementById('addProjectModal');
-    modal.dataset.editProjectId = projectId;
-    modal.dataset.currentImageUrl = imageUrl; // Guardar URL da imagem atual
+    // Mostrar preview da nova imagem se houver
+    if (imageInput.value) {
+        imagePreview.style.display = 'block';
+        imagePreview.querySelector('img').src = imageInput.value;
+    } else {
+        imagePreview.style.display = 'none';
+    }
     
-    // Alterar título e botão do modal
-    const modalTitle = modal.querySelector('.modal-header h3');
-    modalTitle.textContent = 'Editar Projeto';
-    
-    const submitButton = modal.querySelector('button[type="submit"]');
-    submitButton.textContent = 'Atualizar Projeto';
-    
-    // Adicionar botão de exclusão
-    const formActions = modal.querySelector('.form-actions');
+    // Adicionar botão de excluir
+    const formActions = form.querySelector('.form-actions');
     if (!formActions.querySelector('.btn-delete')) {
-        const deleteButton = document.createElement('button');
-        deleteButton.type = 'button';
-        deleteButton.className = 'btn-delete';
-        deleteButton.textContent = 'Excluir Projeto';
-        deleteButton.onclick = () => deleteProject(projectId);
-        formActions.insertBefore(deleteButton, formActions.firstChild);
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'btn btn-delete';
+        deleteBtn.textContent = 'Excluir Projeto';
+        deleteBtn.onclick = () => deleteProject(project.id);
+        formActions.appendChild(deleteBtn);
     }
     
-    // Abrir modal
-    openModal('addProjectModal');
+    openModal('projectModal');
 }
 
 function resetModalToCreateMode() {
@@ -302,13 +286,7 @@ async function loadProjectsFromFirebase() {
         querySnapshot.forEach((doc) => {
             const projectData = doc.data();
             console.log('Projeto carregado:', projectData);
-            const projectCard = createProjectCard(
-                projectData.title,
-                projectData.description,
-                projectData.url,
-                projectData.imageUrl,
-                doc.id
-            );
+            const projectCard = createProjectCard(projectData);
             projectsGrid.insertBefore(projectCard, addProjectCard);
         });
     } catch (error) {
@@ -321,204 +299,115 @@ async function loadProjectsFromFirebase() {
 async function handleAddProject(event) {
     event.preventDefault();
     
-    const title = document.getElementById('projectTitle').value.trim();
-    const description = document.getElementById('projectDescription').value.trim();
-    const url = document.getElementById('projectUrl').value.trim();
-    const imageFile = document.getElementById('projectImage').files[0];
+    const form = event.target;
+    const title = form.querySelector('#projectTitle').value.trim();
+    const description = form.querySelector('#projectDescription').value.trim();
+    const url = form.querySelector('#projectUrl').value.trim();
+    const imageUrl = form.querySelector('#projectImage').value.trim();
     
-    // Verificar se é edição ou criação
-    const modal = document.getElementById('addProjectModal');
-    const isEditing = modal.dataset.editProjectId;
+    if (!title || !description || !url) {
+        alert('Por favor, preencha todos os campos obrigatórios.');
+        return;
+    }
     
-            if (isEditing) {
-            // Modo edição - não requer imagem
-            if (!title || !description || !url) {
-                alert('Por favor, preencha todos os campos obrigatórios.');
-                return;
-            }
+    // Validar URL da imagem se fornecida
+    if (imageUrl && !isValidImageUrl(imageUrl)) {
+        alert('Por favor, forneça uma URL válida de imagem (deve terminar com extensão de imagem válida).');
+        return;
+    }
+    
+    const isEditing = form.dataset.editMode === 'true';
+    const projectId = form.dataset.editMode === 'true' ? form.dataset.projectId : null;
+    
+    console.log('Salvando projeto no Firestore...');
+    
+    if (isEditing) {
+        // Modo edição - atualizar projeto existente
+        const updateData = {
+            title: title,
+            description: description,
+            url: url,
+            updatedAt: new Date()
+        };
+        
+        // Adicionar imagem se fornecida
+        if (imageUrl) {
+            updateData.imageUrl = imageUrl;
         } else {
-            // Modo criação - requer imagem
-            if (!title || !description || !url || !imageFile) {
-                alert('Por favor, preencha todos os campos.');
-                return;
+            // Se não foi alterada, manter a imagem atual
+            const currentImageUrl = form.dataset.currentImageUrl;
+            if (currentImageUrl) {
+                updateData.imageUrl = currentImageUrl;
             }
         }
         
-        // Validar arquivo de imagem apenas se uma nova imagem foi selecionada
-        if (imageFile) {
-            const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-            const maxSize = 5 * 1024 * 1024; // 5MB
-            
-            if (!validTypes.includes(imageFile.type)) {
-                alert('Por favor, selecione apenas arquivos PNG, JPEG ou JPG.');
-                return;
-            }
-            
-            if (imageFile.size > maxSize) {
-                alert('A imagem deve ter no máximo 5MB.');
-                return;
-            }
-        }
-    
-            try {
-            let imageUrl = '';
-            let imageFileName = '';
-            
-            // Como o Firebase Storage requer plano pago, vamos usar uma solução alternativa
-            // Por enquanto, criamos uma URL local para preview e salvamos o nome do arquivo
-            if (imageFile) {
-                imageUrl = URL.createObjectURL(imageFile);
-                imageFileName = imageFile.name;
-            }
+        console.log('Dados para atualização:', updateData);
         
-        if (window.firebaseDb) {
-            if (isEditing) {
-                // Modo edição - atualizar projeto existente
-                console.log('Atualizando projeto no Firestore...');
-                const projectRef = doc(window.firebaseDb, 'projects', isEditing);
-                const updateData = {
-                    title: title,
-                    description: description,
-                    url: url,
-                    updatedAt: new Date()
-                };
-                
-                // Se a imagem foi alterada, adicionar a nova imagem
-                if (imageFile) {
-                    updateData.imageUrl = `placeholder_${imageFileName}`; // Placeholder para o banco de dados
-                    updateData.imageFileName = imageFileName; // Nome do arquivo para referência
-                } else {
-                    // Se não foi alterada, manter a imagem atual
-                    const currentImageUrl = modal.dataset.currentImageUrl;
-                    if (currentImageUrl && !currentImageUrl.startsWith('placeholder_')) {
-                        updateData.imageUrl = currentImageUrl;
-                    }
-                }
-                
-                console.log('Dados do projeto a serem atualizados:', updateData);
-                await updateDoc(projectRef, updateData);
-                console.log('Projeto atualizado com sucesso! ID:', isEditing);
-            } else {
-                // Modo criação - adicionar novo projeto
-                console.log('Salvando projeto no Firestore...');
-                const projectsCollection = collection(window.firebaseDb, 'projects');
-                const projectData = {
-                    title: title,
-                    description: description,
-                    url: url,
-                    imageUrl: imageUrl, // Usar a URL real da imagem (blob: para preview local)
-                    imageFileName: imageFileName, // Nome do arquivo para referência
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                };
-                
-                console.log('Dados do projeto a serem salvos:', projectData);
-                const docRef = await addDoc(projectsCollection, projectData);
-                console.log('Projeto salvo com sucesso! ID:', docRef.id);
-            }
-            
-            // Recarregar projetos do Firebase
-            await loadProjectsFromFirebase();
-        } else {
-            console.log('Firebase não disponível, salvando localmente...');
-            // Fallback para armazenamento local
-            const project = {
-                id: Date.now(),
-                title: title,
-                description: description,
-                url: url,
-                imageUrl: imageUrl
-            };
-            
-            // Adicionar ao array local
-            if (!window.localProjects) {
-                window.localProjects = [];
-            }
-            window.localProjects.push(project);
-            
-            // Adicionar card do projeto
-            addProjectCard(project);
-        }
+        updateDoc(doc(window.firebaseDb, 'projects', projectId), updateData)
+            .then(() => {
+                console.log('Projeto atualizado com sucesso!');
+                loadProjectsFromFirebase();
+                closeModal('projectModal');
+                resetModalToCreateMode();
+            })
+            .catch((error) => {
+                console.error('Erro ao atualizar projeto:', error);
+                alert('Erro ao atualizar projeto. Tente novamente.');
+            });
+    } else {
+        // Modo criação - criar novo projeto
+        const projectData = {
+            title: title,
+            description: description,
+            url: url,
+            imageUrl: imageUrl || 'assets/img/profile-user.png', // Usar imagem padrão se não fornecida
+            createdAt: new Date(),
+        };
         
-        closeModal('addProjectModal');
+        console.log('Dados do projeto a serem salvos:', projectData);
         
-        // Resetar modal para modo de criação
-        resetModalToCreateMode();
-        
-        // Limpar preview da imagem
-        const previewContainer = document.getElementById('imagePreview');
-        if (previewContainer) {
-            previewContainer.innerHTML = '';
-        }
-        
-        const message = isEditing ? 'Projeto atualizado com sucesso!' : 'Projeto adicionado com sucesso!';
-        alert(message);
-        
-    } catch (error) {
-        console.error('Erro ao adicionar projeto:', error);
-        console.error('Detalhes do erro:', error.message);
-        console.error('Stack trace:', error.stack);
-        alert('Erro ao adicionar projeto. Tente novamente. Verifique o console para mais detalhes.');
+        addDoc(collection(window.firebaseDb, 'projects'), projectData)
+            .then(() => {
+                console.log('Projeto criado com sucesso!');
+                loadProjectsFromFirebase();
+                closeModal('projectModal');
+                resetModalToCreateMode();
+            })
+            .catch((error) => {
+                console.error('Erro ao criar projeto:', error);
+                alert('Erro ao criar projeto. Tente novamente.');
+            });
     }
 }
 
 // Função para criar card de projeto
-function createProjectCard(title, description, url, imageUrl, projectId = null) {
+function createProjectCard(project) {
     const card = document.createElement('div');
-    card.className = 'card';
+    card.className = 'project-card';
     
-    if (projectId) {
-        card.dataset.projectId = projectId;
-    }
-    
-    // Determinar a URL da imagem a ser exibida
-    let displayImageUrl = imageUrl;
-    if (imageUrl && imageUrl.startsWith('placeholder_')) {
-        // Se for um placeholder, usar uma imagem padrão
-        displayImageUrl = './assets/img/profile-user.png';
-    }
+    // Usar a URL da imagem do projeto ou imagem padrão
+    const displayImageUrl = project.imageUrl || 'assets/img/profile-user.png';
     
     card.innerHTML = `
-        <div class="card-image">
-            <img src="${displayImageUrl}" alt="${title}" onerror="this.src='./assets/img/profile-user.png'">
-            <div class="edit-icon" title="Editar projeto">
-                ✏️
-            </div>
+        <div class="project-image">
+            <img src="${displayImageUrl}" alt="${project.title}" onerror="this.src='assets/img/profile-user.png'">
         </div>
-        <div class="card-content">
-            <h3>${title}</h3>
-            <p>${description}</p>
+        <div class="project-info">
+            <h3>${project.title}</h3>
+            <p>${project.description}</p>
+            <a href="${project.url}" target="_blank" class="btn btn-primary">Ver Projeto</a>
         </div>
-        <a href="${url}" target="_blank" class="project-link-overlay"></a>
+        <div class="edit-icon" onclick="openEditProjectModal(${JSON.stringify(project).replace(/"/g, '&quot;')})">
+            ✏️
+        </div>
     `;
-    
-    // Armazenar a URL da imagem para limpeza posterior se necessário
-    if (imageUrl && imageUrl.startsWith('blob:')) {
-        card.dataset.imageUrl = imageUrl;
-    }
-    
-    // Adicionar event listener para edição
-    const editIcon = card.querySelector('.edit-icon');
-    if (editIcon) {
-        editIcon.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            openEditProjectModal(projectId, title, description, url, imageUrl);
-        });
-    }
     
     return card;
 }
 
 // Função para limpar URLs de objetos criados
 function cleanupObjectURLs() {
-    const cards = document.querySelectorAll('.card[data-image-url]');
-    cards.forEach(card => {
-        const imageUrl = card.dataset.imageUrl;
-        if (imageUrl && imageUrl.startsWith('blob:')) {
-            URL.revokeObjectURL(imageUrl);
-        }
-    });
+    // Não há mais objetos URL.createObjectURL para limpar
 }
 
 // Função para excluir projeto
@@ -538,7 +427,7 @@ async function deleteProject(projectId) {
             await loadProjectsFromFirebase();
             
             // Fechar modal
-            closeModal('addProjectModal');
+            closeModal('projectModal');
             resetModalToCreateMode();
             
             alert('Projeto excluído com sucesso!');
@@ -558,47 +447,26 @@ function logout() {
     alert('Logout realizado com sucesso!');
 }
 
-// Função para preview da imagem selecionada
-function handleImagePreview(event) {
-    const file = event.target.files[0];
-    const previewContainer = document.getElementById('imagePreview');
+// Função para preview de imagem
+function previewImage(imageUrl) {
+    const previewContainer = document.querySelector('.image-preview');
     
-    if (!previewContainer) {
-        // Criar container de preview se não existir
-        const container = document.createElement('div');
-        container.id = 'imagePreview';
-        container.className = 'image-preview';
-        container.style.cssText = `
-            margin-top: 1rem;
-            text-align: center;
-            padding: 1rem;
-            border: 1px solid rgba(97, 218, 251, 0.3);
-            border-radius: 8px;
-            background: rgba(68, 71, 90, 0.2);
-        `;
-        
-        const imageInput = document.getElementById('projectImage');
-        imageInput.parentNode.insertBefore(container, imageInput.nextSibling);
+    if (!imageUrl) {
+        previewContainer.style.display = 'none';
+        return;
     }
     
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const previewContainer = document.getElementById('imagePreview');
-            previewContainer.innerHTML = `
-                <img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
-                <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">
-                    ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
-                </p>
-            `;
-        };
-        reader.readAsDataURL(file);
-    } else {
-        const previewContainer = document.getElementById('imagePreview');
-        if (previewContainer) {
-            previewContainer.innerHTML = '';
-        }
+    // Validar se é uma URL válida de imagem
+    if (!isValidImageUrl(imageUrl)) {
+        alert('Por favor, forneça uma URL válida de imagem.');
+        return;
     }
+    
+    previewContainer.style.display = 'block';
+    previewContainer.innerHTML = `
+        <img src="${imageUrl}" alt="Preview da imagem" onerror="this.parentElement.style.display='none'; alert('Erro ao carregar imagem. Verifique se a URL está correta.');">
+        <p><small>Preview da imagem</small></p>
+    `;
 }
 
 // Adicionar listener para preview da imagem
@@ -608,6 +476,12 @@ document.addEventListener('DOMContentLoaded', function() {
         imageInput.addEventListener('change', handleImagePreview);
     }
 });
+
+// Função para validar URLs de imagem
+function isValidImageUrl(url) {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+    return imageExtensions.some(ext => url.toLowerCase().includes(ext));
+}
 
 // Exportar funções para uso global
 window.handleLogin = handleLogin;
