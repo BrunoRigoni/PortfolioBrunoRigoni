@@ -602,9 +602,8 @@ html {
 
     /* Skills: rolagem interna para caber todo o conteúdo */
     .skills .section-content.expanded {
-        max-height: 70vh;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        max-height: none;
+        overflow: visible;
     }
 }
 
@@ -907,29 +906,15 @@ section::before {
 }
 
 /* Hard Skills: habilitar rolagem da lista quando conteúdo for longo (todas as larguras) */
+/* Removido limite vertical global para evitar instabilidade no mobile */
 .skills .section-content.expanded {
-    max-height: 60vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    padding-right: 0.5rem; /* espaço para scrollbar */
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
 }
 
 /* Scrollbar sutil para a área de skills */
-.skills .section-content.expanded::-webkit-scrollbar {
-    width: 8px;
-}
-.skills .section-content.expanded::-webkit-scrollbar-track {
-    background: rgba(68, 71, 90, 0.15);
-    border-radius: 4px;
-}
-.skills .section-content.expanded::-webkit-scrollbar-thumb {
-    background: rgba(97, 218, 251, 0.35);
-    border-radius: 4px;
-}
-.skills .section-content.expanded::-webkit-scrollbar-thumb:hover {
-    background: rgba(97, 218, 251, 0.55);
-}
+/* Scrollbar removida para esta seção, já que não haverá rolagem interna */
 
 /* Espaçamento para o texto na seção "Sobre mim" */
 .section-content.expanded .code-text {
@@ -1051,9 +1036,8 @@ section::before {
 
     /* Skills: rolagem interna (mobile pequeno) */
     .skills .section-content.expanded {
-        max-height: 65vh;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        max-height: none;
+        overflow: visible;
     }
 }
 
