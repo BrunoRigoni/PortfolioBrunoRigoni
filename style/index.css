@@ -592,9 +592,12 @@ html {
     }
     
     .projects-grid {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
         gap: 1.5rem;
-        justify-items: center;
+        width: 100%;
     }
 }
 
@@ -910,7 +913,7 @@ section::before {
     }
     
     .section-content.expanded {
-        padding: 0 1.5rem 1.5rem 1.5rem;
+        padding: 0 1rem 1rem 1rem;
     }
     
     .expand-icon {
@@ -948,9 +951,12 @@ section::before {
 /* Responsividade para mobile pequeno */
 @media (max-width: 480px) {
     .projects-grid {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
         gap: 1rem;
-        justify-items: center;
+        width: 100%;
     }
     
     .card-content {
@@ -1457,22 +1463,27 @@ section::before {
     }
     
     .projects-grid {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
         gap: 1.5rem;
-        max-width: 350px;
+        width: 100%;
+        max-width: 22rem;
         margin: 0 auto;
     }
     
     .project-card {
         width: 100%;
-        height: 450px;
+        max-width: 22rem;
+        height: auto;
         margin: 0;
-        padding: 20px;
+        padding: 1.25rem; /* 20px */
     }
     
     .project-image {
-        height: 200px;
-        margin-bottom: 15px;
+        height: auto;
+        margin-bottom: 0.9375rem; /* 15px */
     }
     
     .project-info h3 {
