@@ -906,6 +906,31 @@ section::before {
     opacity: 1;
 }
 
+/* Hard Skills: habilitar rolagem da lista quando conteúdo for longo (todas as larguras) */
+.skills .section-content.expanded {
+    max-height: 60vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 0.5rem; /* espaço para scrollbar */
+}
+
+/* Scrollbar sutil para a área de skills */
+.skills .section-content.expanded::-webkit-scrollbar {
+    width: 8px;
+}
+.skills .section-content.expanded::-webkit-scrollbar-track {
+    background: rgba(68, 71, 90, 0.15);
+    border-radius: 4px;
+}
+.skills .section-content.expanded::-webkit-scrollbar-thumb {
+    background: rgba(97, 218, 251, 0.35);
+    border-radius: 4px;
+}
+.skills .section-content.expanded::-webkit-scrollbar-thumb:hover {
+    background: rgba(97, 218, 251, 0.55);
+}
+
 /* Espaçamento para o texto na seção "Sobre mim" */
 .section-content.expanded .code-text {
     margin-top: 2rem;
