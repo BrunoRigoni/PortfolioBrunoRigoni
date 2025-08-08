@@ -9,13 +9,13 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth
 
 // SUBSTITUA ESTAS CONFIGURAÇÕES PELAS SUAS REAIS
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY_AQUI",
-  authDomain: "SEU_PROJECT_ID.firebaseapp.com",
-  projectId: "SEU_PROJECT_ID",
-  storageBucket: "SEU_PROJECT_ID.firebasestorage.app",
-  messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-  appId: "SEU_APP_ID",
-  measurementId: "SEU_MEASUREMENT_ID"
+  apiKey: "AIzaSyAcr4YN7O5FM_NAZyqFVDx9Aat-saVRRMU",
+  authDomain: "portfolio-bruno-88fdb.firebaseapp.com",
+  projectId: "portfolio-bruno-88fdb",
+  storageBucket: "portfolio-bruno-88fdb.firebasestorage.app",
+  messagingSenderId: "31520496865",
+  appId: "1:31520496865:web:cdcc3f1e21ec914912aba0",
+  measurementId: "G-SHQBQF66QM"
 };
 
 // Inicializar Firebase
