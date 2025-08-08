@@ -1003,6 +1003,19 @@ section::before {
         transform: translateY(-50%);
     }
 
+    /* Garantir o '+' centralizado dentro do círculo no mobile */
+    .section-header .expand-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .section-header .expand-icon::before {
+        position: static;
+        transform: none;
+        line-height: 1;
+        display: block;
+    }
+
     /* Cards centralizados e sem overflow horizontal */
     .project-card,
     .add-project-card {
