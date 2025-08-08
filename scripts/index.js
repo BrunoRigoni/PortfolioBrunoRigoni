@@ -1,3 +1,6 @@
+// Última atualização: 2024-12-19 15:30:00 (commit: refactor: Remover Firebase Storage e ajustar para plano gratuito)
+console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T15:30:00').toLocaleString('pt-BR'), '| Commit: refactor: Remover Firebase Storage e ajustar para plano gratuito');
+
 // Importar funções do Firebase
 import { 
     collection, 
