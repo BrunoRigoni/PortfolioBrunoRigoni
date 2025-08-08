@@ -864,7 +864,7 @@ section::before {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -52%); /* leve ajuste vertical para compensar fonte */
     transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 1.5rem;
     line-height: 1;
@@ -877,12 +877,12 @@ section::before {
 }
 
 .section-header.expanded .expand-icon::before {
-    transform: translate(-50%, -50%) rotate(360deg);
+    transform: translate(-50%, -52%) rotate(360deg);
 }
 
 /* Reset da rotação quando não expandido */
 .section-header:not(.expanded) .expand-icon::before {
-    transform: translate(-50%, -50%) rotate(0deg);
+    transform: translate(-50%, -52%) rotate(0deg);
 }
 
 .section-content {
@@ -1003,18 +1003,7 @@ section::before {
         transform: translateY(-50%);
     }
 
-    /* Garantir o '+' centralizado dentro do círculo no mobile */
-    .section-header .expand-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .section-header .expand-icon::before {
-        position: static;
-        transform: none;
-        line-height: 1;
-        display: block;
-    }
+    /* Removido override do '+'; usa o centramento absoluto padrão */
 
     /* Cards centralizados e sem overflow horizontal */
     .project-card,
