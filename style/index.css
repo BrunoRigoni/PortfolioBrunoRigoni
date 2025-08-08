@@ -338,6 +338,7 @@ section p {
     gap: 2rem;
     margin-top: 2rem;
     align-items: stretch;
+    justify-items: center;
 }
 
 /* Project Cards */
@@ -1752,6 +1753,7 @@ section::before {
     text-align: center;
     font-size: 0.95em;
     display: -webkit-box;
+    line-clamp: 4;
     -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -1801,4 +1803,50 @@ section::before {
     background: rgba(0, 255, 136, 0.2);
     transform: scale(1.15);
     border-color: rgba(0, 255, 136, 0.6);
+}
+
+/* ===== Correções solicitadas ===== */
+/* Centralizar os cards na grade em todas as larguras */
+.projects-grid {
+    justify-items: center;
+}
+
+/* Centralizar títulos de seção e o sublinhado */
+section h2 {
+    text-align: center;
+}
+section h2::after {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Adicionar propriedade padrão line-clamp para compatibilidade */
+@media (max-width: 768px) {
+    .project-info p {
+        line-clamp: 3;
+    }
+}
+@media (max-width: 480px) {
+    .project-info p {
+        line-clamp: 3;
+    }
+}
+
+/* Evitar rolagem horizontal no mobile: título menor e sem animação */
+@media (max-width: 480px) {
+    .typing-effect {
+        font-size: 1.6rem;
+        white-space: normal;
+        border-right: 0;
+        animation: none;
+    }
+}
+
+/* Aumentar discretamente o tamanho do card e imagem quadrada */
+.project-card {
+    width: 340px;
+    height: 460px;
+}
+.project-image {
+    aspect-ratio: 1 / 1;
 }
