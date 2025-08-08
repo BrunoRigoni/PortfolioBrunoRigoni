@@ -1,5 +1,5 @@
-// Última atualização: 2024-12-19 18:35:00 (commit: refactor: Alterar input de imagem para URLs ao invés de arquivos)
-console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T18:35:00').toLocaleString('pt-BR'), '| Commit: refactor: Alterar input de imagem para URLs ao invés de arquivos');
+// Última atualização: 2024-12-19 18:45:00 (commit: feat: Melhorar cards e implementar design responsivo completo)
+console.log('🔄 Portfólio Bruno Rigoni - Última atualização:', new Date('2024-12-19T18:45:00').toLocaleString('pt-BR'), '| Commit: feat: Melhorar cards e implementar design responsivo completo');
 
 // Importar funções do Firebase
 import { 
