@@ -272,7 +272,7 @@ header p {
 /* Main Content */
 main {
     padding: 4rem 2rem;
-    max-width: 1200px;
+    max-width: 1400px; /* Aumentado de 1200px para 1400px para mais espaço horizontal */
     margin: 0 auto;
 }
 
@@ -335,10 +335,12 @@ section p {
 .projects-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
+    gap: 2.5rem; /* Aumentado de 2rem para 2.5rem para melhor espaçamento */
     margin-top: 2rem;
     align-items: stretch;
     justify-items: center;
+    width: 100%; /* Garantir que ocupe toda a largura disponível */
+    max-width: 100%; /* Remover limitação de largura */
 }
 
 /* Project Cards */
@@ -356,6 +358,8 @@ section p {
     min-height: 25rem; /* 400px */
     display: flex;
     flex-direction: column;
+    width: 100%; /* Garantir que ocupe toda a largura da coluna do grid */
+    max-width: 100%; /* Remover limitação de largura */
 }
 
 .card:hover {
